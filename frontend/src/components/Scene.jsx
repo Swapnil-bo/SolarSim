@@ -1,6 +1,8 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Stars, OrbitControls } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import Sun from './Sun'
 
 function LoadingScreen() {
   return (
@@ -14,9 +16,12 @@ function SceneContent() {
   return (
     <>
       <ambientLight intensity={0.1} />
-      <pointLight position={[0, 0, 0]} intensity={2} />
+      <Sun />
       <Stars radius={300} depth={60} count={5000} factor={4} />
       <OrbitControls enableDamping />
+      <EffectComposer>
+        <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
+      </EffectComposer>
     </>
   )
 }
