@@ -5,6 +5,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Sun from './Sun'
 import Planet from './Planet'
 import OrbitPath from './OrbitPath'
+import AsteroidBelt from './AsteroidBelt'
 import planets from '../data/planets'
 
 function LoadingScreen() {
@@ -26,6 +27,7 @@ function SceneContent() {
           <OrbitPath distance={planet.distance} />
         </group>
       ))}
+      <AsteroidBelt />
       <Stars radius={300} depth={60} count={5000} factor={4} />
       <OrbitControls enableDamping />
       <EffectComposer>
