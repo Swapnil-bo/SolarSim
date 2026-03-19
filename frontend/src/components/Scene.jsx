@@ -3,6 +3,9 @@ import { Canvas } from '@react-three/fiber'
 import { Stars, OrbitControls } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import Sun from './Sun'
+import Planet from './Planet'
+import OrbitPath from './OrbitPath'
+import planets from '../data/planets'
 
 function LoadingScreen() {
   return (
@@ -17,6 +20,12 @@ function SceneContent() {
     <>
       <ambientLight intensity={0.1} />
       <Sun />
+      {planets.map((planet) => (
+        <group key={planet.name}>
+          <Planet config={planet} />
+          <OrbitPath distance={planet.distance} />
+        </group>
+      ))}
       <Stars radius={300} depth={60} count={5000} factor={4} />
       <OrbitControls enableDamping />
       <EffectComposer>
