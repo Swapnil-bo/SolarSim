@@ -68,32 +68,32 @@ function CameraController({ selectedPlanet, planetPositions, controlsRef }) {
   return null
 }
 
-function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, planetPositions }) {
+function SceneContent() {
   const controlsRef = useRef()
+  const earthRef = useRef()
+
+  // Single simple useFrame — does it crash?
+  useFrame((state, delta) => {
+    if (earthRef.current) {
+      earthRef.current.rotation.y += 0.01
+    }
+  })
 
   return (
     <>
-      <ambientLight intensity={0.1} />
-      <Sun />
-      {planets.map((planet) => (
-        <group key={planet.name}>
-          <Planet
-            config={planet}
-            timeScale={timeScale}
-            isPaused={isPaused}
-            onSelect={onSelectPlanet}
-            positionStore={planetPositions}
-          />
-          <OrbitPath distance={planet.distance} />
-        </group>
-      ))}
-      <Stars radius={300} depth={60} count={2000} factor={4} />
+      <ambientLight intensity={0.3} />
+      <pointLight position={[0, 0, 0]} intensity={2} />
+      {/* Sun - static, no component */}
+      <mesh>
+        <sphereGeometry args={[5, 32, 32]} />
+        <meshStandardMaterial emissive="#FDB813" emissiveIntensity={2} color="#FDB813" />
+      </mesh>
+      {/* Earth - static position, just rotating */}
+      <mesh ref={earthRef} position={[22, 0, 0]}>
+        <sphereGeometry args={[1, 16, 16]} />
+        <meshStandardMaterial color="#4fc3f7" />
+      </mesh>
       <OrbitControls ref={controlsRef} enableDamping />
-      <CameraController
-        selectedPlanet={selectedPlanet}
-        planetPositions={planetPositions}
-        controlsRef={controlsRef}
-      />
     </>
   )
 }
