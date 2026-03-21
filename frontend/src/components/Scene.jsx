@@ -68,31 +68,47 @@ function CameraController({ selectedPlanet, planetPositions, controlsRef }) {
   return null
 }
 
+function InlinePlanet({ distance, radius, color, speed }) {
+  const ref = useRef()
+  const angleRef = useRef(Math.random() * Math.PI * 2)
+
+  useFrame((state, delta) => {
+    angleRef.current += speed * delta * 60
+    ref.current.position.x = Math.cos(angleRef.current) * distance
+    ref.current.position.z = Math.sin(angleRef.current) * distance
+    ref.current.rotation.y += 0.01
+  })
+
+  return (
+    <mesh ref={ref}>
+      <sphereGeometry args={[radius, 16, 16]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  )
+}
+
 function SceneContent() {
   const controlsRef = useRef()
-  const earthRef = useRef()
-
-  // Single simple useFrame — does it crash?
-  useFrame((state, delta) => {
-    if (earthRef.current) {
-      earthRef.current.rotation.y += 0.01
-    }
-  })
 
   return (
     <>
       <ambientLight intensity={0.3} />
       <pointLight position={[0, 0, 0]} intensity={2} />
-      {/* Sun - static, no component */}
+      {/* Sun */}
       <mesh>
         <sphereGeometry args={[5, 32, 32]} />
         <meshStandardMaterial emissive="#FDB813" emissiveIntensity={2} color="#FDB813" />
       </mesh>
-      {/* Earth - static position, just rotating */}
-      <mesh ref={earthRef} position={[22, 0, 0]}>
-        <sphereGeometry args={[1, 16, 16]} />
-        <meshStandardMaterial color="#4fc3f7" />
-      </mesh>
+      {/* All 8 planets inline */}
+      <InlinePlanet distance={10} radius={0.38} color="#a0a0a0" speed={0.04} />
+      <InlinePlanet distance={16} radius={0.95} color="#e8cda0" speed={0.015} />
+      <InlinePlanet distance={22} radius={1.0} color="#4fc3f7" speed={0.01} />
+      <InlinePlanet distance={28} radius={0.53} color="#c1440e" speed={0.008} />
+      <InlinePlanet distance={40} radius={3.5} color="#c88b3a" speed={0.004} />
+      <InlinePlanet distance={55} radius={2.9} color="#e8d5a3" speed={0.003} />
+      <InlinePlanet distance={70} radius={1.8} color="#7de8e8" speed={0.002} />
+      <InlinePlanet distance={85} radius={1.7} color="#3f51b5" speed={0.001} />
+      <Stars radius={300} depth={60} count={2000} factor={4} />
       <OrbitControls ref={controlsRef} enableDamping />
     </>
   )
