@@ -1,5 +1,3 @@
-import { useTexture } from '@react-three/drei'
-
 const planets = [
   {
     name: "Mercury",
@@ -148,14 +146,5 @@ const planets = [
     }
   }
 ]
-
-// Static preload — call at module level, not inside a component body
-// Moon textures are nested in moons[] so flatMap is required — a plain .map() skips them entirely
-// saturn_ring.png added manually — it is not in the planets array
-useTexture.preload([
-  ...planets.map(p => `/textures/${p.textureFile}`),
-  ...planets.flatMap(p => (p.moons || []).map(m => `/textures/${m.textureFile}`)),
-  '/textures/saturn_ring.png'
-])
 
 export default planets
