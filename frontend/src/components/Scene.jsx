@@ -73,31 +73,13 @@ function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, pla
 
   return (
     <>
-      <ambientLight intensity={0.1} />
-      <Sun />
-      {planets.map((planet) => (
-        <group key={planet.name}>
-          <Planet
-            config={planet}
-            timeScale={timeScale}
-            isPaused={isPaused}
-            onSelect={onSelectPlanet}
-            positionStore={planetPositions}
-          />
-          <OrbitPath distance={planet.distance} />
-        </group>
-      ))}
-      {/* <AsteroidBelt timeScale={timeScale} isPaused={isPaused} /> */}
-      <Stars radius={300} depth={60} count={2000} factor={4} />
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} />
+      <mesh>
+        <boxGeometry args={[2, 2, 2]} />
+        <meshStandardMaterial color="orange" />
+      </mesh>
       <OrbitControls ref={controlsRef} enableDamping />
-      <CameraController
-        selectedPlanet={selectedPlanet}
-        planetPositions={planetPositions}
-        controlsRef={controlsRef}
-      />
-      {/* <EffectComposer>
-        <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
-      </EffectComposer> */}
     </>
   )
 }
@@ -106,7 +88,33 @@ export default function Scene() {
   const [timeScale, setTimeScale] = useState(1)
   const [isPaused, setIsPaused] = useState(false)
   const [selectedPlanet, setSelectedPlanet] = useState(null)
+  const [contextLost, setContextLost] = useState(false)
   const planetPositions = useRef({})
+
+  const handleCreated = ({ gl }) => {
+    const canvas = gl.domElement
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault()
+      setContextLost(true)
+    })
+    canvas.addEventListener('webglcontextrestored', () => {
+      setContextLost(false)
+    })
+  }
+
+  if (contextLost) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white gap-4">
+        <div className="text-xl">WebGL Context Lost</div>
+        <button
+          className="px-4 py-2 bg-white/10 rounded hover:bg-white/20"
+          onClick={() => window.location.reload()}
+        >
+          Reload Page
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="relative w-full h-full">
@@ -115,6 +123,8 @@ export default function Scene() {
           dpr={[1, 1]}
           camera={{ position: [0, 30, 80], fov: 60 }}
           style={{ background: '#000' }}
+          gl={{ antialias: false, powerPreference: 'default', alpha: false }}
+          onCreated={handleCreated}
           onPointerMissed={() => setSelectedPlanet(null)}
         >
           <SceneContent
