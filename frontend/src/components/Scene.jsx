@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import Sun from './Sun'
 import Planet from './Planet'
 import OrbitPath from './OrbitPath'
-// import AsteroidBelt from './AsteroidBelt'
+import AsteroidBelt from './AsteroidBelt'
 import TimeControls from './TimeControls'
 import PlanetInfoPanel from './PlanetInfoPanel'
 import AISidebar from './AISidebar'
@@ -87,7 +87,7 @@ function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, pla
           <OrbitPath distance={planet.distance} />
         </group>
       ))}
-      {/* <AsteroidBelt timeScale={timeScale} isPaused={isPaused} /> */}
+      <AsteroidBelt timeScale={timeScale} isPaused={isPaused} />
       <Stars radius={300} depth={60} count={2000} factor={4} />
       <OrbitControls ref={controlsRef} enableDamping />
       <CameraController
@@ -95,9 +95,9 @@ function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, pla
         planetPositions={planetPositions}
         controlsRef={controlsRef}
       />
-      {/* <EffectComposer>
+      <EffectComposer>
         <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
-      </EffectComposer> */}
+      </EffectComposer>
     </>
   )
 }
