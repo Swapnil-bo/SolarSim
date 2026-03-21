@@ -14,11 +14,9 @@ export default function Sun() {
       <pointLight
         position={[0, 0, 0]}
         intensity={2}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
       />
       <mesh ref={meshRef}>
-        <sphereGeometry args={[5, 64, 64]} />
+        <sphereGeometry args={[5, 32, 32]} />
         <meshStandardMaterial
           emissive="#FDB813"
           emissiveIntensity={2}
