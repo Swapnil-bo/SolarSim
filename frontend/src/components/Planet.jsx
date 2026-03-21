@@ -1,16 +1,29 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useTexture } from '@react-three/drei'
 import { ErrorBoundary } from 'react-error-boundary'
 import * as THREE from 'three'
 import SaturnRings from './SaturnRings'
+
+const loader = new THREE.TextureLoader()
+
+function useLazyTexture(path) {
+  const [texture, setTexture] = useState(null)
+  useEffect(() => {
+    if (!path) return
+    loader.load(path, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      setTexture(tex)
+    })
+  }, [path])
+  return texture
+}
 
 function MoonWithTexture({ config, timeScale, isPaused }) {
   const meshRef = useRef()
   const groupRef = useRef()
   const angleRef = useRef(Math.random() * Math.PI * 2)
 
-  const texture = useTexture(`/textures/${config.textureFile}`)
+  const texture = useLazyTexture(`/textures/${config.textureFile}`)
 
   useFrame((state, delta) => {
     angleRef.current += config.speed * timeScale * delta * 60 * (isPaused ? 0 : 1)
@@ -22,7 +35,7 @@ function MoonWithTexture({ config, timeScale, isPaused }) {
     <group ref={groupRef}>
       <mesh ref={meshRef}>
         <sphereGeometry args={[config.radius, 16, 16]} />
-        <meshStandardMaterial map={texture} />
+        <meshStandardMaterial map={texture} color={texture ? undefined : '#aaaaaa'} />
       </mesh>
     </group>
   )
@@ -64,7 +77,7 @@ function PlanetWithTexture({ config, timeScale, isPaused, onSelect, positionStor
   const [hovered, setHovered] = useState(false)
   const baseScale = useRef(1)
 
-  const texture = useTexture(`/textures/${config.textureFile}`)
+  const texture = useLazyTexture(`/textures/${config.textureFile}`)
 
   useEffect(() => {
     if (meshRef.current) {
@@ -114,7 +127,7 @@ function PlanetWithTexture({ config, timeScale, isPaused, onSelect, positionStor
         onPointerOut={handlePointerOut}
       >
         <sphereGeometry args={[config.radius, 16, 16]} />
-        <meshStandardMaterial map={texture} />
+        <meshStandardMaterial map={texture} color={texture ? undefined : config.color} />
       </mesh>
       {config.name === "Saturn" && <SaturnRings />}
       {(config.moons || []).map((moon) => (
@@ -188,6 +201,9 @@ function PlanetFallback({ config, timeScale, isPaused, onSelect, positionStore }
 }
 
 export default function Planet({ config, timeScale = 1, isPaused = false, onSelect, positionStore }) {
-  // Temporarily skip textures to diagnose WebGL context loss
-  return <PlanetFallback config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />
+  return (
+    <ErrorBoundary fallback={<PlanetFallback config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />}>
+      <PlanetWithTexture config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />
+    </ErrorBoundary>
+  )
 }
