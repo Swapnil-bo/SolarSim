@@ -1,4 +1,4 @@
-import { Suspense, useState, useRef, useCallback, useEffect } from 'react'
+import { Suspense, useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Stars, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -48,12 +48,59 @@ function OrbitRing({ distance }) {
   )
 }
 
+// Saturn rings — color only, no texture
+function SaturnRings() {
+  const geometry = useMemo(() => {
+    const ringGeo = new THREE.RingGeometry(3.5, 6.5, 64)
+    const pos = ringGeo.attributes.position
+    const uv = ringGeo.attributes.uv
+    for (let i = 0; i < pos.count; i++) {
+      uv.setXY(i, (pos.getX(i) / 6.5 + 1) / 2, (pos.getY(i) / 6.5 + 1) / 2)
+    }
+    return ringGeo
+  }, [])
+
+  return (
+    <mesh rotation-x={Math.PI / 2} geometry={geometry}>
+      <meshBasicMaterial color="#e8d5a3" side={THREE.DoubleSide} transparent opacity={0.6} />
+    </mesh>
+  )
+}
+
+// Moon orbiting its parent planet
+function Moon({ config, timeScale, isPaused }) {
+  const groupRef = useRef()
+  const angleRef = useRef(Math.random() * Math.PI * 2)
+  const texture = useLazyTexture(`/textures/${config.textureFile}`)
+
+  useFrame((state, delta) => {
+    angleRef.current += config.speed * timeScale * delta * 60 * (isPaused ? 0 : 1)
+    groupRef.current.position.x = Math.cos(angleRef.current) * config.distance
+    groupRef.current.position.z = Math.sin(angleRef.current) * config.distance
+  })
+
+  return (
+    <group ref={groupRef}>
+      <mesh>
+        <sphereGeometry args={[config.radius, 16, 16]} />
+        <meshStandardMaterial color="#aaaaaa" map={texture} />
+      </mesh>
+    </group>
+  )
+}
+
 function Planet({ config, timeScale, isPaused, onSelect, positionStore }) {
   const ref = useRef()
   const groupRef = useRef()
   const angleRef = useRef(Math.random() * Math.PI * 2)
   const [hovered, setHovered] = useState(false)
   const baseScale = useRef(1)
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.rotation.z = THREE.MathUtils.degToRad(config.tilt)
+    }
+  }, [config.tilt])
 
   useFrame((state, delta) => {
     angleRef.current += config.speed * timeScale * delta * 60 * (isPaused ? 0 : 1)
@@ -94,6 +141,10 @@ function Planet({ config, timeScale, isPaused, onSelect, positionStore }) {
         <sphereGeometry args={[config.radius, 16, 16]} />
         <meshStandardMaterial color={config.color} map={texture} />
       </mesh>
+      {config.name === "Saturn" && <SaturnRings />}
+      {(config.moons || []).map((moon) => (
+        <Moon key={moon.name} config={moon} timeScale={timeScale} isPaused={isPaused} />
+      ))}
     </group>
   )
 }
