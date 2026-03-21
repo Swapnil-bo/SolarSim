@@ -1,7 +1,7 @@
 import { Suspense, useState, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Stars, OrbitControls } from '@react-three/drei'
-// import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import Sun from './Sun'
 import Planet from './Planet'
@@ -95,7 +95,9 @@ function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, pla
         planetPositions={planetPositions}
         controlsRef={controlsRef}
       />
-      {/* Bloom disabled — causes WebGL context loss on lower-end GPUs */}
+      {/* <EffectComposer>
+        <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
+      </EffectComposer> */}
     </>
   )
 }
