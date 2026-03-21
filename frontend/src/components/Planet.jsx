@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -20,8 +20,8 @@ function MoonWithTexture({ config, timeScale, isPaused }) {
 
   return (
     <group ref={groupRef}>
-      <mesh ref={meshRef} castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 32, 32]} />
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[config.radius, 16, 16]} />
         <meshStandardMaterial map={texture} />
       </mesh>
     </group>
@@ -41,8 +41,8 @@ function MoonFallback({ config, timeScale, isPaused }) {
 
   return (
     <group ref={groupRef}>
-      <mesh ref={meshRef} castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 32, 32]} />
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[config.radius, 16, 16]} />
         <meshStandardMaterial color="#aaaaaa" />
       </mesh>
     </group>
@@ -57,10 +57,12 @@ function Moon({ config, timeScale, isPaused }) {
   )
 }
 
-function PlanetWithTexture({ config, timeScale, isPaused }) {
+function PlanetWithTexture({ config, timeScale, isPaused, onSelect, positionStore }) {
   const meshRef = useRef()
   const groupRef = useRef()
   const angleRef = useRef(Math.random() * Math.PI * 2)
+  const [hovered, setHovered] = useState(false)
+  const baseScale = useRef(1)
 
   const texture = useTexture(`/textures/${config.textureFile}`)
 
@@ -75,12 +77,43 @@ function PlanetWithTexture({ config, timeScale, isPaused }) {
     groupRef.current.position.x = Math.cos(angleRef.current) * config.distance
     groupRef.current.position.z = Math.sin(angleRef.current) * config.distance
     meshRef.current.rotation.y += config.rotationSpeed * delta * 60 * (isPaused ? 0 : 1)
+
+    // Hover scale pulse
+    const targetScale = hovered ? 1.15 : 1
+    baseScale.current = THREE.MathUtils.lerp(baseScale.current, targetScale, 0.1)
+    meshRef.current.scale.setScalar(baseScale.current)
+
+    // Report position for camera lerp
+    if (positionStore) {
+      positionStore.current[config.name] = groupRef.current.position
+    }
   })
+
+  const handleClick = (e) => {
+    e.stopPropagation()
+    if (onSelect) onSelect(config)
+  }
+
+  const handlePointerOver = useCallback((e) => {
+    e.stopPropagation()
+    setHovered(true)
+    document.body.style.cursor = 'pointer'
+  }, [])
+
+  const handlePointerOut = useCallback(() => {
+    setHovered(false)
+    document.body.style.cursor = 'default'
+  }, [])
 
   return (
     <group ref={groupRef}>
-      <mesh ref={meshRef} castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 32, 32]} />
+      <mesh
+        ref={meshRef}
+        onClick={handleClick}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+      >
+        <sphereGeometry args={[config.radius, 16, 16]} />
         <meshStandardMaterial map={texture} />
       </mesh>
       {config.name === "Saturn" && <SaturnRings />}
@@ -91,10 +124,12 @@ function PlanetWithTexture({ config, timeScale, isPaused }) {
   )
 }
 
-function PlanetFallback({ config, timeScale, isPaused }) {
+function PlanetFallback({ config, timeScale, isPaused, onSelect, positionStore }) {
   const meshRef = useRef()
   const groupRef = useRef()
   const angleRef = useRef(Math.random() * Math.PI * 2)
+  const [hovered, setHovered] = useState(false)
+  const baseScale = useRef(1)
 
   useEffect(() => {
     if (meshRef.current) {
@@ -107,12 +142,41 @@ function PlanetFallback({ config, timeScale, isPaused }) {
     groupRef.current.position.x = Math.cos(angleRef.current) * config.distance
     groupRef.current.position.z = Math.sin(angleRef.current) * config.distance
     meshRef.current.rotation.y += config.rotationSpeed * delta * 60 * (isPaused ? 0 : 1)
+
+    const targetScale = hovered ? 1.15 : 1
+    baseScale.current = THREE.MathUtils.lerp(baseScale.current, targetScale, 0.1)
+    meshRef.current.scale.setScalar(baseScale.current)
+
+    if (positionStore) {
+      positionStore.current[config.name] = groupRef.current.position
+    }
   })
+
+  const handleClick = (e) => {
+    e.stopPropagation()
+    if (onSelect) onSelect(config)
+  }
+
+  const handlePointerOver = useCallback((e) => {
+    e.stopPropagation()
+    setHovered(true)
+    document.body.style.cursor = 'pointer'
+  }, [])
+
+  const handlePointerOut = useCallback(() => {
+    setHovered(false)
+    document.body.style.cursor = 'default'
+  }, [])
 
   return (
     <group ref={groupRef}>
-      <mesh ref={meshRef} castShadow receiveShadow>
-        <sphereGeometry args={[config.radius, 32, 32]} />
+      <mesh
+        ref={meshRef}
+        onClick={handleClick}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+      >
+        <sphereGeometry args={[config.radius, 16, 16]} />
         <meshStandardMaterial color={config.color} />
       </mesh>
       {config.name === "Saturn" && <SaturnRings />}
@@ -123,10 +187,10 @@ function PlanetFallback({ config, timeScale, isPaused }) {
   )
 }
 
-export default function Planet({ config, timeScale = 1, isPaused = false }) {
+export default function Planet({ config, timeScale = 1, isPaused = false, onSelect, positionStore }) {
   return (
-    <ErrorBoundary fallback={<PlanetFallback config={config} timeScale={timeScale} isPaused={isPaused} />}>
-      <PlanetWithTexture config={config} timeScale={timeScale} isPaused={isPaused} />
+    <ErrorBoundary fallback={<PlanetFallback config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />}>
+      <PlanetWithTexture config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />
     </ErrorBoundary>
   )
 }
