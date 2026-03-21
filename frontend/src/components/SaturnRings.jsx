@@ -63,9 +63,6 @@ function SaturnRingsFallback() {
 }
 
 export default function SaturnRings() {
-  return (
-    <ErrorBoundary fallback={<SaturnRingsFallback />}>
-      <SaturnRingsWithTexture />
-    </ErrorBoundary>
-  )
+  // Temporarily skip texture to diagnose WebGL context loss
+  return <SaturnRingsFallback />
 }

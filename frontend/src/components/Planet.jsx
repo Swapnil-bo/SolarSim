@@ -188,9 +188,6 @@ function PlanetFallback({ config, timeScale, isPaused, onSelect, positionStore }
 }
 
 export default function Planet({ config, timeScale = 1, isPaused = false, onSelect, positionStore }) {
-  return (
-    <ErrorBoundary fallback={<PlanetFallback config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />}>
-      <PlanetWithTexture config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />
-    </ErrorBoundary>
-  )
+  // Temporarily skip textures to diagnose WebGL context loss
+  return <PlanetFallback config={config} timeScale={timeScale} isPaused={isPaused} onSelect={onSelect} positionStore={positionStore} />
 }
