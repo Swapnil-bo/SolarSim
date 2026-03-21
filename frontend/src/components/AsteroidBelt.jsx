@@ -59,8 +59,8 @@ export default function AsteroidBelt({ timeScale = 1, isPaused = false }) {
     const mesh = meshRef.current
     return () => {
       if (mesh) {
-        mesh.geometry.dispose()
-        mesh.material.dispose()
+        if (mesh.geometry) mesh.geometry.dispose()
+        if (mesh.material) mesh.material.dispose()
       }
     }
   }, [])
