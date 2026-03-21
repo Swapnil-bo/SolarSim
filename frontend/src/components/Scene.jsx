@@ -1,7 +1,25 @@
-import { Suspense, useState, useRef, useCallback } from 'react'
+import { Suspense, useState, useRef, useCallback, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Stars, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
+
+// Lazy texture loader — loads in background, doesn't block rendering
+const textureLoader = new THREE.TextureLoader()
+const textureCache = {}
+function useLazyTexture(path) {
+  const [texture, setTexture] = useState(null)
+  useEffect(() => {
+    if (textureCache[path]) {
+      setTexture(textureCache[path])
+      return
+    }
+    textureLoader.load(path, (tex) => {
+      textureCache[path] = tex
+      setTexture(tex)
+    })
+  }, [path])
+  return texture
+}
 import TimeControls from './TimeControls'
 import PlanetInfoPanel from './PlanetInfoPanel'
 import AISidebar from './AISidebar'
@@ -68,11 +86,13 @@ function Planet({ config, timeScale, isPaused, onSelect, positionStore }) {
     document.body.style.cursor = 'default'
   }, [])
 
+  const texture = useLazyTexture(`/textures/${config.textureFile}`)
+
   return (
     <group ref={groupRef}>
       <mesh ref={ref} onClick={handleClick} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut}>
         <sphereGeometry args={[config.radius, 16, 16]} />
-        <meshStandardMaterial color={config.color} />
+        <meshStandardMaterial color={config.color} map={texture} />
       </mesh>
     </group>
   )
