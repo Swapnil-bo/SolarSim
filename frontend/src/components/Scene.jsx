@@ -73,13 +73,27 @@ function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, pla
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
-      <mesh>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
+      <ambientLight intensity={0.1} />
+      <Sun />
+      {planets.map((planet) => (
+        <group key={planet.name}>
+          <Planet
+            config={planet}
+            timeScale={timeScale}
+            isPaused={isPaused}
+            onSelect={onSelectPlanet}
+            positionStore={planetPositions}
+          />
+          <OrbitPath distance={planet.distance} />
+        </group>
+      ))}
+      <Stars radius={300} depth={60} count={2000} factor={4} />
       <OrbitControls ref={controlsRef} enableDamping />
+      <CameraController
+        selectedPlanet={selectedPlanet}
+        planetPositions={planetPositions}
+        controlsRef={controlsRef}
+      />
     </>
   )
 }
