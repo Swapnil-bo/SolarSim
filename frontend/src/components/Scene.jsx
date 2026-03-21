@@ -1,4 +1,4 @@
-import { Suspense, useState, useRef, useMemo } from 'react'
+import { Suspense, useState, useRef, useCallback } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Stars, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -18,24 +18,8 @@ function LoadingScreen() {
   )
 }
 
-function InlinePlanet({ distance, radius, color, speed }) {
-  const ref = useRef()
-  const angleRef = useRef(Math.random() * Math.PI * 2)
-
-  useFrame((state, delta) => {
-    angleRef.current += speed * delta * 60
-    ref.current.position.x = Math.cos(angleRef.current) * distance
-    ref.current.position.z = Math.sin(angleRef.current) * distance
-    ref.current.rotation.y += 0.01
-  })
-
-  return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[radius, 16, 16]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
-  )
-}
+const DEFAULT_CAM_POS = new THREE.Vector3(0, 30, 80)
+const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0)
 
 function OrbitRing({ distance }) {
   return (
@@ -46,7 +30,89 @@ function OrbitRing({ distance }) {
   )
 }
 
-function SceneContent() {
+function Planet({ config, timeScale, isPaused, onSelect, positionStore }) {
+  const ref = useRef()
+  const groupRef = useRef()
+  const angleRef = useRef(Math.random() * Math.PI * 2)
+  const [hovered, setHovered] = useState(false)
+  const baseScale = useRef(1)
+
+  useFrame((state, delta) => {
+    angleRef.current += config.speed * timeScale * delta * 60 * (isPaused ? 0 : 1)
+    groupRef.current.position.x = Math.cos(angleRef.current) * config.distance
+    groupRef.current.position.z = Math.sin(angleRef.current) * config.distance
+    ref.current.rotation.y += config.rotationSpeed * delta * 60 * (isPaused ? 0 : 1)
+
+    const targetScale = hovered ? 1.15 : 1
+    baseScale.current = THREE.MathUtils.lerp(baseScale.current, targetScale, 0.1)
+    ref.current.scale.setScalar(baseScale.current)
+
+    if (positionStore) {
+      positionStore.current[config.name] = groupRef.current.position
+    }
+  })
+
+  const handleClick = useCallback((e) => {
+    e.stopPropagation()
+    if (onSelect) onSelect(config)
+  }, [onSelect, config])
+
+  const handlePointerOver = useCallback((e) => {
+    e.stopPropagation()
+    setHovered(true)
+    document.body.style.cursor = 'pointer'
+  }, [])
+
+  const handlePointerOut = useCallback(() => {
+    setHovered(false)
+    document.body.style.cursor = 'default'
+  }, [])
+
+  return (
+    <group ref={groupRef}>
+      <mesh ref={ref} onClick={handleClick} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut}>
+        <sphereGeometry args={[config.radius, 16, 16]} />
+        <meshStandardMaterial color={config.color} />
+      </mesh>
+    </group>
+  )
+}
+
+function CameraController({ selectedPlanet, planetPositions, controlsRef }) {
+  const { camera } = useThree()
+  const targetPos = useRef(new THREE.Vector3())
+  const targetCam = useRef(new THREE.Vector3())
+
+  useFrame(() => {
+    if (!controlsRef.current) return
+
+    if (!selectedPlanet) {
+      camera.position.lerp(DEFAULT_CAM_POS, 0.03)
+      controlsRef.current.target.lerp(DEFAULT_TARGET, 0.03)
+      controlsRef.current.update()
+      controlsRef.current.enabled = true
+      return
+    }
+
+    const pos = planetPositions.current[selectedPlanet.name]
+    if (!pos) return
+
+    targetPos.current.set(pos.x, pos.y, pos.z)
+    const offset = Math.max(selectedPlanet.radius * 5, 6)
+    targetCam.current.set(pos.x + offset, offset * 0.6, pos.z + offset)
+
+    camera.position.lerp(targetCam.current, 0.05)
+    controlsRef.current.target.lerp(targetPos.current, 0.05)
+    controlsRef.current.update()
+
+    const distanceToTarget = camera.position.distanceTo(targetCam.current)
+    controlsRef.current.enabled = distanceToTarget < 0.1
+  })
+
+  return null
+}
+
+function SceneContent({ timeScale, isPaused, onSelectPlanet, selectedPlanet, planetPositions }) {
   const controlsRef = useRef()
 
   return (
@@ -59,24 +125,25 @@ function SceneContent() {
         <meshStandardMaterial emissive="#FDB813" emissiveIntensity={2} color="#FDB813" />
       </mesh>
       {/* All 8 planets + orbit rings */}
-      <InlinePlanet distance={10} radius={0.38} color="#a0a0a0" speed={0.04} />
-      <OrbitRing distance={10} />
-      <InlinePlanet distance={16} radius={0.95} color="#e8cda0" speed={0.015} />
-      <OrbitRing distance={16} />
-      <InlinePlanet distance={22} radius={1.0} color="#4fc3f7" speed={0.01} />
-      <OrbitRing distance={22} />
-      <InlinePlanet distance={28} radius={0.53} color="#c1440e" speed={0.008} />
-      <OrbitRing distance={28} />
-      <InlinePlanet distance={40} radius={3.5} color="#c88b3a" speed={0.004} />
-      <OrbitRing distance={40} />
-      <InlinePlanet distance={55} radius={2.9} color="#e8d5a3" speed={0.003} />
-      <OrbitRing distance={55} />
-      <InlinePlanet distance={70} radius={1.8} color="#7de8e8" speed={0.002} />
-      <OrbitRing distance={70} />
-      <InlinePlanet distance={85} radius={1.7} color="#3f51b5" speed={0.001} />
-      <OrbitRing distance={85} />
+      {planets.map((planet) => (
+        <group key={planet.name}>
+          <Planet
+            config={planet}
+            timeScale={timeScale}
+            isPaused={isPaused}
+            onSelect={onSelectPlanet}
+            positionStore={planetPositions}
+          />
+          <OrbitRing distance={planet.distance} />
+        </group>
+      ))}
       <Stars radius={300} depth={60} count={2000} factor={4} />
       <OrbitControls ref={controlsRef} enableDamping />
+      <CameraController
+        selectedPlanet={selectedPlanet}
+        planetPositions={planetPositions}
+        controlsRef={controlsRef}
+      />
     </>
   )
 }
@@ -124,9 +191,24 @@ export default function Scene() {
           onCreated={handleCreated}
           onPointerMissed={() => setSelectedPlanet(null)}
         >
-          <SceneContent />
+          <SceneContent
+            timeScale={timeScale}
+            isPaused={isPaused}
+            onSelectPlanet={setSelectedPlanet}
+            selectedPlanet={selectedPlanet}
+            planetPositions={planetPositions}
+          />
         </Canvas>
       </Suspense>
+      {selectedPlanet && (
+        <div className="absolute top-4 right-4 hidden md:flex flex-col gap-3" style={{ maxHeight: 'calc(100% - 2rem)' }}>
+          <PlanetInfoPanel
+            planet={selectedPlanet}
+            onClose={() => setSelectedPlanet(null)}
+          />
+          <AISidebar planet={selectedPlanet} />
+        </div>
+      )}
       <TimeControls
         timeScale={timeScale}
         setTimeScale={setTimeScale}
