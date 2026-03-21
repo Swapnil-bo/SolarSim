@@ -14,3 +14,30 @@ body,
   overflow: hidden;
   background: #000;
 }
+
+/* Loading screen animated orbit ring */
+.loading-orbit {
+  width: 80px;
+  height: 80px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  position: relative;
+  animation: loading-spin 2s linear infinite;
+}
+
+.loading-planet {
+  width: 12px;
+  height: 12px;
+  background: #4fc3f7;
+  border-radius: 50%;
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+  box-shadow: 0 0 12px #4fc3f7, 0 0 24px rgba(79, 195, 247, 0.4);
+}
+
+@keyframes loading-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
